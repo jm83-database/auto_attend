@@ -10,20 +10,22 @@ import time
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'auto_attend_secret_key'
+app.secret_key = os.environ.get('SECRET_KEY', 'auto_attend_secret_key')
 
-# 파일 경로 상수 
-UPLOAD_FOLDER = 'uploads'
-TEMPLATE_FOLDER = 'templates'
-RESULT_FOLDER = 'results'
+# 파일 경로 상수 (상대 경로로 변경)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+TEMPLATE_FOLDER = os.path.join(BASE_DIR, 'templates')
+RESULT_FOLDER = os.path.join(BASE_DIR, 'results')
+STATIC_RESULT_FOLDER = os.path.join(BASE_DIR, 'static', 'results')
 
 # 정적 파일을 제공하기 위한 경로 설정
-app.static_folder = 'static'
+app.static_folder = os.path.join(BASE_DIR, 'static')
 
 # 폴더 생성
-os.makedirs(os.path.join(os.path.dirname(__file__), UPLOAD_FOLDER), exist_ok=True)
-os.makedirs(os.path.join(os.path.dirname(__file__), RESULT_FOLDER), exist_ok=True)
-os.makedirs(os.path.join(os.path.dirname(__file__), 'static', RESULT_FOLDER), exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(RESULT_FOLDER, exist_ok=True)
+os.makedirs(STATIC_RESULT_FOLDER, exist_ok=True)
 
 # 파일 삭제 함수 (1분 후)
 def delete_file_after_delay(file_path, delay=60):
@@ -35,7 +37,7 @@ def delete_file_after_delay(file_path, delay=60):
                 print(f"파일 삭제 완료: {file_path}")
                 
                 # 정적 폴더의 파일도 삭제
-                static_path = file_path.replace(RESULT_FOLDER, os.path.join('static', RESULT_FOLDER))
+                static_path = file_path.replace(RESULT_FOLDER, STATIC_RESULT_FOLDER)
                 if os.path.exists(static_path):
                     os.remove(static_path)
                     print(f"정적 파일 삭제 완료: {static_path}")
@@ -207,21 +209,19 @@ def update_excel(excel_file, attendance_dict, participants_list):
     
     # 저장 경로 설정
     result_path = os.path.join(RESULT_FOLDER, result_filename)
-    full_result_path = os.path.join(os.path.dirname(__file__), result_path)
     
     # 정적 폴더 경로 설정
-    static_result_path = os.path.join('static', RESULT_FOLDER, result_filename)
-    full_static_result_path = os.path.join(os.path.dirname(__file__), static_result_path)
+    static_result_path = os.path.join(STATIC_RESULT_FOLDER, result_filename)
     
     # 업데이트된 엑셀 파일 저장 (일반 폴더와 정적 폴더 모두)
-    workbook.save(full_result_path)
-    workbook.save(full_static_result_path)
+    workbook.save(result_path)
+    workbook.save(static_result_path)
     
     return {
         'updates': updates,
         'result_path': result_path,
         'result_filename': result_filename,
-        'full_result_path': full_result_path
+        'full_result_path': result_path
     }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -270,7 +270,11 @@ def index():
 
 @app.route('/download/<path:filename>')
 def download_file(filename):
-    return send_from_directory(os.path.join(os.path.dirname(__file__), RESULT_FOLDER), filename, as_attachment=True)
+    return send_from_directory(RESULT_FOLDER, filename, as_attachment=True)
 
+# Azure App Service 환경 변수 지원
+port = int(os.environ.get('PORT', 5000))
+
+# Azure App Service에서 실행될 때 필요한 설정
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
