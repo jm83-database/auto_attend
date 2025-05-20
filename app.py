@@ -9,7 +9,7 @@ import threading
 import time
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # 로깅 설정
 logging.basicConfig(
@@ -54,6 +54,11 @@ try:
 except Exception as e:
     logger.error(f"앱 초기화 중 오류 발생: {str(e)}")
     raise
+
+# 한국 시간대(KST)로 변환하는 함수
+def get_korea_time():
+    # UTC 시간에 9시간 추가
+    return datetime.now() + timedelta(hours=9)
 
 # 파일 삭제 함수 (1분 후)
 def delete_file_after_delay(file_path, delay=60):
@@ -244,8 +249,9 @@ def update_excel(excel_file, attendance_dict, participants_list):
                     
                     break
         
-        # 타임스탬프로 파일명 생성
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # 한국 시간(KST)으로 타임스탬프 파일명 생성
+        kst_now = get_korea_time()
+        timestamp = kst_now.strftime("%Y%m%d_%H%M%S")
         result_filename = f'updated_{timestamp}_{os.path.basename(excel_file.filename)}'
         
         # 저장 경로 설정
@@ -344,7 +350,9 @@ port = int(os.environ.get('PORT', 5000))
 # Flask 애플리케이션이 Azure WebApp에서 정상적으로 실행되는지 확인하기 위한 상태 체크 엔드포인트
 @app.route('/health')
 def health_check():
-    return 'OK', 200
+    # 현재 한국 시간을 확인하기 위한 정보 추가
+    kst_now = get_korea_time()
+    return f'OK - KST: {kst_now.strftime("%Y-%m-%d %H:%M:%S")}', 200
 
 # Azure App Service에서 실행될 때 필요한 설정
 if __name__ == '__main__':
