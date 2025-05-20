@@ -12,29 +12,54 @@
 3. 업데이트된 Excel 파일을 즉시 다운로드 가능
 4. 보안 및 디스크 공간 관리를 위해 다운로드 후 1분 뒤 자동 파일 삭제
 
+## 프로젝트 구조
+
+```
+auto_attend/
+├── .git/                   # Git 버전 관리 폴더
+├── .github/                # GitHub 관련 설정 폴더
+│    └── workflows/         # GitHub Actions 워크플로우 폴더
+│         └── main_autoattend.yml  # Azure 배포 워크플로우 파일
+├── .venv/                  # 파이썬 가상 환경 (필요 시 생성)
+├── results/                # 결과 파일 저장 폴더
+├── static/                 # 정적 파일 폴더
+│    └── results/           # 웹에서 접근 가능한 결과 파일 폴더
+├── templates/              # HTML 템플릿 폴더
+│    └── index.html         # 메인 페이지 HTML
+├── test/                   # 테스트 관련 폴더
+├── uploads/                # 업로드된 파일 임시 저장 폴더
+├── .gitignore              # Git 무시 파일 설정
+├── app.py                  # 메인 애플리케이션 서버 (Flask)
+├── README.md               # 프로젝트 설명서
+├── requirements.txt        # 의존성 패키지 목록
+├── startup.txt             # Azure WebApp 시작 명령 파일
+├── web.config              # Azure WebApp 구성 파일
+└── wsgi.py                 # WSGI 애플리케이션 진입점
+```
+
+위 구조는 프로젝트의 전체적인 파일 및 폴더 구성을 보여줍니다. 각 파일과 폴더의 역할을 이해하면 프로젝트를 더 쉽게 관리하고 수정할 수 있습니다.
+
 ## 시스템 요구사항
 
 - Python 3.6 이상
-- Flask
-- pandas
-- openpyxl
-- threading (표준 라이브러리)
+- Flask 2.0.1
+- Werkzeug 2.0.1
+- Pandas 1.3.5
+- NumPy 1.21.6
+- openpyxl 3.0.10
+- Gunicorn 20.1.0 (Azure 배포용)
 
 ## 설치 방법
 
 1. 필요한 Python 라이브러리 설치:
 
 ```bash
-pip install flask pandas openpyxl
-```
-
-또는 다음 명령어로 일괄 설치:
-
-```bash
 pip install -r requirements.txt
 ```
 
 ## 사용 방법
+
+### 로컬 환경
 
 1. 다음 명령어로 서버 실행:
 
@@ -51,15 +76,17 @@ python app.py
 5. 업데이트 결과가 표시되며, "업데이트된 Excel 파일 다운로드" 버튼을 클릭하여 파일을 즉시 다운로드할 수 있습니다.
 6. 다운로드 후 1분 뒤에 서버에서 파일이 자동으로 삭제됩니다.
 
-## 파일 구조
+### Azure 배포 환경
 
-- app.py: Flask 애플리케이션 메인 파일
-- templates/: HTML 템플릿 파일
-  - index.html: 메인 페이지 템플릿
-- uploads/: 업로드된 파일 임시 저장 폴더
-- results/: 업데이트된 결과 파일 저장 폴더 (파일은 다운로드 후 1분 뒤 자동 삭제)
-- static/: 정적 파일 저장 폴더
-  - results/: 웹에서 접근 가능한 결과 파일 저장 폴더
+애플리케이션은 Azure WebApp에 배포되어 있으며, 다음 URL에서 접근 가능합니다:
+https://autoattend.azurewebsites.net
+
+## 배포 관련 파일
+
+- **web.config**: Azure WebApp의 IIS 웹 서버 구성 파일
+- **startup.txt**: Azure WebApp 시작 명령어 지정 (Gunicorn 사용)
+- **wsgi.py**: WSGI 애플리케이션 진입점
+- **.github/workflows/main_autoattend.yml**: GitHub Actions를 통한 자동 배포 구성
 
 ## 주의사항
 
@@ -79,3 +106,12 @@ python app.py
 - 파일 업로드 오류 발생 시 인코딩 문제일 수 있습니다. 참석보고서 CSV 파일이 UTF-16LE 인코딩인지 확인하세요.
 - 열 구조가 맞지 않을 경우 app.py 파일에서 해당 열 인덱스를 수정해야 할 수 있습니다.
 - 다운로드 링크가 작동하지 않는 경우 results 폴더에 쓰기 권한이 있는지 확인하세요.
+- Azure WebApp 배포 시 발생하는 패키지 호환성 문제는 requirements.txt 파일에 명시된 패키지 버전을 통해 해결됩니다.
+
+## 업데이트 내역
+
+- 2025-05-20: Azure WebApp 배포를 위해 패키지 버전 호환성 문제 해결
+  - Flask 및 Werkzeug 버전 고정 (Flask==2.0.1, Werkzeug==2.0.1)
+  - Pandas 및 NumPy 버전 호환성 조정 (Pandas==1.3.5, NumPy==1.21.6)
+  - WSGI 서버로 Gunicorn 사용 (버전 20.1.0)
+  - Azure WebApp 배포 관련 파일 추가 (web.config, wsgi.py)
